@@ -140,7 +140,7 @@ const result = Transducer()
     .map(double)
     .transduce(array);
 
-console.log(result); // [2, 6, 8]
+console.log(result); // [2, 6, 10]
 ```
 
 # Benchmarks

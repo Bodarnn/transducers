@@ -1,2 +1,11 @@
-# transducers
-Basic implementation of transducers in JavaScript.
+# Transducers
+
+
+# Examples
+
+
+# Benchmarks
+
+
+# Conclusion
+

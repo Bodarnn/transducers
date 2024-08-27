@@ -76,7 +76,7 @@ console.log(reducer(1)); // 2
 reducer = transducer(reducer);
 console.log(reducer(1)); // 3
 
-# and so on...
+// and so on...
 ```
 
 In our earlier example, `map` and `filter` were just transducer factories:

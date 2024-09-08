@@ -1,17 +1,26 @@
-# Introduction
-Recently, I watched Rich Hickey's talk "Transducers" ([source](https://youtu.be/6mTbuzafcII?si=NoNGTIMgMWW49oOD)), which inspired me to make my own transducers.
-
-We might iterate an array like this:
+This project was inspired by "'Transducers' by Rich Hickey" ([source](https://youtu.be/6mTbuzafcII?si=NoNGTIMgMWW49oOD)).
 
 ```javascript
+// Setup
+
 const isOdd = (x) => x % 2;
 const double = (x) => x * 2;
-const sum = (a, c) => a + c;
+const sum = (a, x) => a + x;
 
 const array = [1, 2, 3, 4, 5];
+```
 
+# Introduction
+
+We can iterate an array using a for loop
+
+```javascript
+// For loop
+
+const n = array.length;
 let result = 0;
-for (let i = 0; i < array.length; i++) {
+
+for (let i = 0; i < n; i++) {
     const x = array[i];
     if (isOdd(x)) {
         result = sum(result, double(x));
@@ -21,14 +30,10 @@ for (let i = 0; i < array.length; i++) {
 console.log(result); // 18
 ```
 
-but many people prefer this:
+and/or using functions.
 
 ```javascript
-const isOdd = (x) => x % 2;
-const double = (x) => x * 2;
-const sum = (a, c) => a + c;
-
-const array = [1, 2, 3, 4, 5];
+// Functional
 
 const result = array
     .filter(isOdd)
@@ -38,34 +43,32 @@ const result = array
 console.log(result); // 18
 ```
 
-since it's easier to read. However, it's less performant, because it loops 3 times, and creates 2 intermediate arrays.
-
-What if we could have both performance and readability? Well, look at this:
+However, both have disadvantages which a transducer can mitigate.
 
 ```javascript
-const isOdd = (x) => x % 2;
-const double = (x) => x * 2;
-const sum = (a, c) => a + c;
-
-const array = [1, 2, 3, 4, 5];
+// Transducers
 
 const result = Transducer()
     .filter(isOdd)
     .map(double)
     .reduce(sum, 0)
-    .transduce(array);
+    .composeTransduce(array);
 
 console.log(result); // 18
 ```
 
-This code is readable, loops 1 time, and creates 0 intermediate arrays. So, what's a transducer?
+The transducer is more readable than the for loop, and more performant than the functions.
 
 # Transducers
 
-A transducer is a function that takes a reducer and returns a reducer. They combine reducers like this:
+A transducer is a function that takes a reducer and returns a reducer.
+
+They can compose many reducers to one.
 
 ```javascript
-const transducer = (reducer) => (x) => reducer(x) + 1;
+// Double transducer
+
+const transducer = (reducer) => (x) => reducer(x) * 2;
 
 let reducer = (x) => x;
 console.log(reducer(1)); // 1
@@ -74,76 +77,83 @@ reducer = transducer(reducer);
 console.log(reducer(1)); // 2
 
 reducer = transducer(reducer);
-console.log(reducer(1)); // 3
+console.log(reducer(1)); // 4
 
 // and so on...
 ```
 
-In our earlier example, `map` and `filter` were just transducer factories:
+In the introduction, `map` and `filter` are transducer factories.
 
 ```javascript
-const map = (fun) => (reducer) => (x) => reducer(fun(x));
-const filter = (fun) => (reducer) => (x) => fun(x) ? reducer(x) : null;
+const map = (callbackFn) => (reducer) => (x) => reducer(callbackFn(x));
+const filter = (callbackFn) => (reducer) => (x) => callbackFn(x) ? reducer(x) : null;
 
 let reducer = (x) => x;
 console.log(reducer(1)); // 1
 
-reducer = map((x) => x * 2)(reducer);
+reducer = map(double)(reducer);
 console.log(reducer(1)); // 2
 
-reducer = filter((x) => x % 2)(reducer);
+reducer = filter(isOdd)(reducer);
 console.log(reducer(1)); // 2
+console.log(reducer(2)); // null
 
-// reduce, map, and filter are now one function
+// and so on...
 ```
 
-and that's basically how transducers work.
+This is essentially how transducers work.
 
-My transducers have 2 entry points:
+# Examples
+
+This sections shows some simple examples.
 
 ```javascript
-const isOdd = (x) => x % 2;
-const double = (x) => x * 2;
-const sum = (a, c) => a + c;
-
-const array = [1, 2, 3, 4, 5];
-
 // JavaScript style
+
 const result = Transducer()
     .filter(isOdd)
     .map(double)
     .reduce(sum, 0)
-    .transduce(array);
+    .composeTransduce(array);
 
 console.log(result); // 18
+```
 
+```javascript
 // scikit-learn style
+
+const array1 = [1, 2, 3, 4, 5];
+const array2 = [6, 7, 8, 9, 0];
+
 const transducer = Transducer([
     Transducer.Filter(isOdd),
     Transducer.Map(double),
     Transducer.Reduce(sum, 0)
 ]);
 
-console.log(transducer.transduce(array)); // 18
+transducer.compose();
+
+const result1 = transducer.transduce(array1);
+const result2 = transducer.transduce(array2);
+
+console.log(result1); // 18
+console.log(result2); // 32
 ```
 
-Additionally, my transducers don't need `reduce`:
-
 ```javascript
-const isOdd = (x) => x % 2;
-const double = (x) => x * 2;
-
-const array = [1, 2, 3, 4, 5];
+// Without reduce
 
 const result = Transducer()
     .filter(isOdd)
     .map(double)
-    .transduce(array);
+    .composeTransduce(array);
 
 console.log(result); // [2, 6, 10]
 ```
 
 # Benchmarks
+
+This section show some simple benchmarks.
 
 ```javascript
 const isOdd = (x) => x % 2;
@@ -153,6 +163,9 @@ const sum = (a, c) => a + c;
 const array = Array.from({length: 1048576}, () => Math.floor(256 * Math.random()));
 
 let forLoop = 0;
+let functional = 0;
+let transducer = 0;
+
 for (let i = 0; i < 128; i++) {
     const start = performance.now();
     let result = 0;
@@ -162,43 +175,48 @@ for (let i = 0; i < 128; i++) {
             result = sum(result, double(x));
         }
     }
-    forLoop += performance.now() - start;
+    const stop = performance.now();
+    forLoop += stop - start;
 }
-console.log(`For loop: ${(forLoop / 128).toFixed(2)} ms`); // 27.97 ms
 
-let functional = 0;
 for (let i = 0; i < 128; i++) {
     const start = performance.now();
     const result = array
         .filter(isOdd)
         .map(double)
         .reduce(sum, 0);
-    functional += performance.now() - start;
+    const stop = performance.now();
+    functional += stop - start;
 }
-console.log(`Functional: ${(functional / 128).toFixed(2)} ms`); // 92.98 ms
 
-let transducer = 0;
 for (let i = 0; i < 128; i++) {
     const start = performance.now();
     const result = Transducer()
         .filter(isOdd)
         .map(double)
         .reduce(sum, 0)
-        .transduce(array);
-    transducer += performance.now() - start;
+        .composeTransduce(array);
+    const stop = performance.now();
+    transducer += stop - start;
 }
-console.log(`Transducer: ${(transducer / 128).toFixed(2)} ms`); // 46.14 ms
+
+console.log(`For loop: ${(forLoop / 128).toFixed(2)} ms`); // 26.19 ms
+console.log(`Functional: ${(functional / 128).toFixed(2)} ms`); // 102.23 ms
+console.log(`Transducer: ${(transducer / 128).toFixed(2)} ms`); // 46.09 ms
 ```
 
 # Conclusions
 
-Transducers are cool. My benchmark shows them 2x faster than the methods, but 2x slower than a for loop.
+Transducers are cool. They benchmark 2x faster than the functions, and 2x slower than the for loop.
 
-Some issues I hit were:
+Additionally, (like the for loop, and unlike the functions) they do not create intermediate arrays.
 
-- I couldn't figure out how to put `reduce` before another reducer. I don't think this is a problem, and you should save it for last.
-- I couldn't figure out how to make the the initial value optional. It's tough, because you might `filter` first.
+However, they have some quirks:
+- They require an initial value, especially for `filter` and sparse arrays.
+- Reduce can only be last, since it only passes down the accumulator.
 
-Also, I only implemented this for arrays! Perhaps the coolest part of transducers is that they're collection-agnostic. In the future, I'll add support for other collections.
+Finally, I only implemented transducers for array. Perhaps the coolest part of transducers is that they are collection-agnostic.
+
+In the future, I might add support for other collections.
 
 Cheers!

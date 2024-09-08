@@ -63,7 +63,7 @@ The transducer is more readable than the for loop, and more performant than the 
 
 A transducer is a function that takes a reducer and returns a reducer.
 
-They can compose many reducers to one.
+They compose many reducers to one.
 
 ```javascript
 // Double transducer
@@ -207,15 +207,15 @@ console.log(`Transducer: ${(transducer / 128).toFixed(2)} ms`); // 46.09 ms
 
 # Conclusions
 
-Transducers are cool. They benchmark 2x faster than the functions, and 2x slower than the for loop.
+Transducers are cool. They benchmark 2x faster than functions, and 2x slower than for loops.
 
-Additionally, (like the for loop, and unlike the functions) they do not create intermediate arrays.
+Additionally, (like for loops, and unlike functions) they do not create intermediate arrays.
 
 However, they have some quirks:
 - They require an initial value, especially for `filter` and sparse arrays.
-- Reduce can only be last, since it only passes down the accumulator.
+- `reduce` can only be last, since it only passes down an accumulator.
 
-Finally, I only implemented transducers for array. Perhaps the coolest part of transducers is that they are collection-agnostic.
+Finally, I only implemented transducers for arrays. Perhaps the coolest part of transducers is that they can be collection-agnostic.
 
 In the future, I might add support for other collections.
 

@@ -205,7 +205,7 @@ console.log(`Functional: ${(functional / 128).toFixed(2)} ms`); // 102.23 ms
 console.log(`Transducer: ${(transducer / 128).toFixed(2)} ms`); // 46.09 ms
 ```
 
-# Conclusions
+# Conclusion
 
 Transducers are cool. They benchmark 2x faster than functions, and 2x slower than for loops.
 
